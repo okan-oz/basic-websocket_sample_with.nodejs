@@ -1,19 +1,33 @@
-// Requiring module
 const express = require('express');
- 
-// Creating express object
 const app = express();
- 
-// Handling GET request
-app.get('/', (req, res) => {
-    res.send('A simple Node App is '
-        + 'running on this server')
-    res.end()
+const bodyParser = require('body-parser');
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+
+app.use(express.static(__dirname));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
+
+const messages = [
+    {name: "Tim", message: "yo"},
+    {name: "Pam", message: "hi"}
+]
+
+app.get('/messages', (req, res) => {
+    res.send(messages);
 })
- 
-// Port Number
-const PORT = process.env.PORT ||1905;
- 
-// Server Setup
-app.listen(PORT,console.log(
-  `Server started on port ${PORT}`));
+
+app.post('/message', (req, res) => {
+    messages.push(req.body);
+    io.emit('message', req.body);
+    res.sendStatus(200);
+})
+
+io.on('connection', () => {
+    console.log('a user connected');
+});
+
+const server = http.listen(3000, () => {
+    const {port} = server.address();
+    console.log(`Listening on port ${port}`);
+});
